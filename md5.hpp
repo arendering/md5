@@ -14,6 +14,24 @@ static const unsigned int word = 32;
 
 enum funcs {F_func, G_func, H_func, I_func};
 
+std::bitset<64> GetLengthBitset(long long len)
+{
+    std::bitset<8> bs_arr[8];
+    for(int i = 0; i < 8; ++i) {
+        unsigned char ch = (unsigned char)(len >> i * 8);
+        std::bitset<8> tmp_bs(ch);
+        bs_arr[i] = tmp_bs;
+    }
+
+    std::string ret_str(64, '0');
+    for (int i = 0; i < 8; i++) {
+        std::string tmp = bs_arr[i].to_string();
+        std::copy(tmp.begin(), tmp.end(), ret_str.begin() + 8 * i);
+    }
+    std::bitset<64> bs_ret(ret_str);
+    return bs_ret;
+}
+
 template<unsigned int N>
 std::bitset<N> SwapHalfs(std::bitset<N> bs)
 {
@@ -50,29 +68,16 @@ std::bitset<length> Adjustment(std::bitset<N> bs)
     std::bitset<length> ret_val(pre_val_string);
     ret_val <<= length - prelength;
 
-    // swap halfs
-    const unsigned int end_len = 64;
-    std::bitset<end_len> end_bs(1073741824) ; // replace 1073741824 on N after
-    std::bitset<end_len> swapped_end_bs = SwapHalfs<end_len>(end_bs);
-    std::bitset<length> extended_swapped_end_bs(swapped_end_bs.to_string());
-
-    // not swap halfs
-    //std::bitset<length> extended_swapped_end_bs(64);
-    ret_val |= extended_swapped_end_bs;
+    const long long len = 64; // because input string have 8 symbols
+    std::bitset<64> tail_bs = GetLengthBitset(len);
+    std::bitset<length> extended_tail_bs(tail_bs.to_string());
+    ret_val |= extended_tail_bs;
     return ret_val;
 }
 
 std::bitset<word> F(std::bitset<word> x, std::bitset<word> y, std::bitset<word> z)
 {
     return (x & y) | (~x & z);
-    /*
-    std::bitset<word> x_copy(x.to_string());
-    x &= y;
-    std::bitset<word> x_neg = ~x_copy;
-    x_neg &= z;
-    x |= x_neg;
-    return x;
-    */
 }
 
 std::bitset<word> G(std::bitset<word> x, std::bitset<word> y, std::bitset<word> z)
@@ -186,29 +191,17 @@ void Hash(std::bitset<length> bs)
     funcs g_func = G_func;
     funcs h_func = H_func;
     funcs i_func = I_func;
-    
-    //Print_ABCD(A,B,C,D);
-    //std::cout << "X[0]:";
-    //PrintInHex(X[0].to_string());
-    //std::cout << "T[1]:";
-    //PrintInHex(T[1].to_string());
+
+    /*
+    Print_ABCD(A,B,C,D);
+    std::cout << "X[0]:";
+    PrintInHex(X[0].to_string());
+    std::cout << "T[1]:";
+    PrintInHex(T[1].to_string());
+    */
 
     // 1st round
     // [abcd k s i] --> a = b + (( a + F(b,c,d) + X[k] + T[i]) <<< s)    
-    
-    /* check X[0-16]
-    for(int i = 0; i < 16; i++) {
-        std::cout << "X[" << i << "]: ";
-        PrintInHex(X[i].to_string());
-    }
-    */
-    /* check T[0-10]
-    for(int i = 0; i < 10; i++) {
-        std::cout << "T[" << i << "]: ";
-        PrintInHex(T[i].to_string());
-    }
-    */
-
     Set(A, B, C, D, X, T, 0, 7, 0, f_func);
     Set(D, A, B, C, X, T, 1, 12, 1, f_func);
     Set(C, D, A, B, X, T, 2, 17, 2, f_func);
