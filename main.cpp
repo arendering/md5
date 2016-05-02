@@ -8,7 +8,7 @@ int main()
     const unsigned int byte = 8;
     const unsigned int bits_len = 512;
     
-    std::string inp("abcdefgh");
+    std::string inp("12345678");
     std::bitset<passwd_len * byte> inp_bitset = GetBitsetFromString<passwd_len * byte>(inp);
     std::bitset<bits_len> outp = Adjustment<passwd_len * byte>(inp_bitset);
     std::cout << "Prehash string hex: ";

@@ -126,14 +126,6 @@ void Set(std::bitset<word> &A, std::bitset<word> B, std::bitset<word> C, std::bi
         func_tmp = I(B, C, D);
 
     BitsetAdd<word>(A, func_tmp);
-    /*
-    std::bitset<word> new_X = ReplaceX(X[k]);
-    if(k == 1) {
-        std::cout << "X[" << k << "]:";
-        PrintInHex(new_X.to_string());
-    }
-    BitsetAdd<word>(A, new_X);
-    */
     BitsetAdd<word>(A, X[k]);
     BitsetAdd<word>(A, T[i]);
     RotLeft<word>(A, s);
@@ -191,14 +183,6 @@ void Hash(std::bitset<length> bs)
     funcs g_func = G_func;
     funcs h_func = H_func;
     funcs i_func = I_func;
-
-    /*
-    Print_ABCD(A,B,C,D);
-    std::cout << "X[0]:";
-    PrintInHex(X[0].to_string());
-    std::cout << "T[1]:";
-    PrintInHex(T[1].to_string());
-    */
 
     // 1st round
     // [abcd k s i] --> a = b + (( a + F(b,c,d) + X[k] + T[i]) <<< s)    
@@ -293,13 +277,6 @@ void Hash(std::bitset<length> bs)
     std::string C_str = C_replace.to_string();
     std::string D_str = D_replace.to_string();
     std::string answer_str = A_str + B_str + C_str + D_str;
-    /*
-    std::copy(A_str.begin(), A_str.end(), answer_str.begin());
-    std::copy(B_str.begin(), B_str.end(), answer_str.begin() + word);
-    std::copy(C_str.begin(), C_str.end(), answer_str.begin() + word * 2);
-    std::copy(D_str.begin(), D_str.end(), answer_str.begin() + word * 3);
-    */
-
 
     PrintInHex(answer_str);
 }
