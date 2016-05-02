@@ -91,6 +91,14 @@ def get_X_array():
         solver.add(X[j] == Concat(temp_for_X[k+3], temp_for_X[k+2], temp_for_X[k+1], temp_for_X[k]))
         k += 4
 
+    
+    """
+    temp_value = BitVec('temp_value', 32)
+    solver.add(temp_value == B + ( RotateLeft(A + ((B & C) + (~B & D)) + X[0] + T[0], 7) ) )
+    solver.add(temp_value == 0xBEB8FF8E)
+    find_all_results(solver,inp_str)
+    """
+
     """
     # check X correct
     X_glue = BitVec('X_glue', 512)
@@ -98,8 +106,6 @@ def get_X_array():
     solver.add(X_glue == 0x34333231383736350000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000)
     find_all_results(solver, inp_str)
     """
-    
-
     return X
 
 def prepare_before_rounds():
@@ -231,13 +237,13 @@ def Set(A, B, C, D, *args):
     func_const = args[3]
 
     if func_const == 'F':
-        return B | RotateLeft( (A | F(B,C,D) | X[k] | T[i] ), s) 
+        return B + RotateLeft( (A + F(B,C,D) + X[k] + T[i] ), s) 
     if func_const == 'G':
-        return B | RotateLeft( (A | G(B,C,D) | X[k] | T[i] ), s) 
+        return B + RotateLeft( (A + G(B,C,D) + X[k] + T[i] ), s) 
     if func_const == 'H':
-        return B | RotateLeft( (A | H(B,C,D) | X[k] | T[i] ), s) 
+        return B + RotateLeft( (A + H(B,C,D) + X[k] + T[i] ), s) 
     if func_const == 'I':
-        return B | RotateLeft( (A | I(B,C,D) | X[k] | T[i] ), s) 
+        return B + RotateLeft( (A + I(B,C,D) + X[k] + T[i] ), s) 
    
 
 def find_all_results(solver, inp):
@@ -295,15 +301,19 @@ solver.add( inp_str == Concat(*inp_list) ) # concatenate input symbols-bits
 T = get_T_array() # bit_vec<32> T[64]
 X = get_X_array() # bit_vec<32> X[16]
 
-"""
+
 rounds_tmp, list_of_constants = prepare_before_rounds()
+
     
 for i in range(64):
     solver.add( rounds_tmp[i + 4] == Set(rounds_tmp[i], rounds_tmp[i + 3], rounds_tmp[i + 2], rounds_tmp[i + 1], *(list_of_constants[i])))
-    if i == 0:
-        solver.add(rounds_tmp[i + 4] == 0xBEB8FF8E)
-        find_all_results(solver, inp_str)
-        
+    #if i == 0:
+    #    solver.add(rounds_tmp[i + 4] == 0xBEB8FF8E)
+    #    find_all_results(solver, inp_str)
+
+solver.add(rounds_tmp[64] == 0xD25AD525)
+find_all_results(solver, inp_str)
+"""
 AA, BB, CC, DD = BitVecs('AA BB CC DD', 32)
 
 solver.add(AA == A | rounds_tmp[64])
