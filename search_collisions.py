@@ -5,8 +5,9 @@ import time
 import math
 import binascii
 
-hash_value = 0x25d55ad283aa400af464c76d713c07ad # it's 12345678
-input_len = 8 # input string length in bytes
+hash_value = 0xc4ca4238a0b923820dcc509a6f75849b
+
+input_len = 1 # input string length in bytes
 byte = 8
 
 A = BitVecVal(0x67452301, 32)
@@ -32,7 +33,7 @@ def get_input_string(inp):
     Из int'a inp получаем исходное представление прообраза в виде нормальной строки,
     например "abcdefgh" или "12345678", а не в виде бит, или огромного int'a
     """
-    input_len = 8
+    global input_len 
     hex_str = hex(inp)
     hex_str = hex_str[2: 2 * (input_len + 1)]
     ret = binascii.unhexlify(hex_str)
@@ -192,42 +193,35 @@ def prepare_before_rounds():
 
     return rounds_tmp, list_of_constants
 
-
-def set_right_order_and_check_hash(A, B, C, D):
-    """
-    Из итоговых вариантов A, B, C и D меняем порядок байт в словах и собираем итоговую строку
-    """
+def fill_tmp_for_abcd(tmp_for_abcd, word, index):
+    global byte
     global solver
-    global hash_value
-    tmp_lst_for_final = list()
+    high = 7
+    low = 0
+    for i in range(4):    
+        solver.add(tmp_for_abcd[index] == Extract(high, low, word))
+        high += byte
+        low += byte
+        index += 1
+
+
+def set_right_order(A, B, C, D):
+    """
+    Из итоговых вариантов A, B, C и D меняем порядок байт в словах 
+    """
+    tmp_for_abcd = list()
     for i in range(16):
-        s = 'tmp_lst_for_final' + str(i)
+        s = 'tmp_for_abcd' + str(i)
         tmp = BitVec(s, 8)
-        tmp_lst_for_final.append(tmp)
-    abcd = BitVec('abcd', 128)
-    solver.add(abcd == Concat(A, B, C, D))
-    high = 127
-    low = 120
-    for i in range(16):
-        solver.add(tmp_lst_for_final[i] == Extract(high, low, abcd))
-        high -= byte
-        low -= byte
+        tmp_for_abcd.append(tmp)
+    fill_tmp_for_abcd(tmp_for_abcd, A, 0)
+    fill_tmp_for_abcd(tmp_for_abcd, B, 4)
+    fill_tmp_for_abcd(tmp_for_abcd, C, 8)
+    fill_tmp_for_abcd(tmp_for_abcd, D, 12)
+    return tmp_for_abcd
 
-    tmp_right_order = list()
-    for i in range(4):
-        s = 'tmp_right_order' + str(i)
-        tmp = BitVec(s, 32)
-        tmp_right_order.append(tmp)
-
-    k = 0
-    for i in range(0, 16, 4):
-        solver.add(tmp_right_order[k] == Concat(tmp_lst_for_final[i + 3], tmp_lst_for_final[i + 2], tmp_lst_for_final[i + 1], tmp_lst_for_final[i]))
-        k += 1
-    hash_string = BitVec('hash_string', 128)
-    solver.add(hash_string == Concat(tmp_right_order[0], tmp_right_order[1], tmp_right_order[2], tmp_right_order[3]))
-    solver.add(hash_string == hash_value)
-
-
+        
+    
 def Set(A, B, C, D, *args):
     global X
     global T
@@ -307,21 +301,19 @@ rounds_tmp, list_of_constants = prepare_before_rounds()
     
 for i in range(64):
     solver.add( rounds_tmp[i + 4] == Set(rounds_tmp[i], rounds_tmp[i + 3], rounds_tmp[i + 2], rounds_tmp[i + 1], *(list_of_constants[i])))
-    #if i == 0:
-    #    solver.add(rounds_tmp[i + 4] == 0xBEB8FF8E)
-    #    find_all_results(solver, inp_str)
 
-solver.add(rounds_tmp[64] == 0xD25AD525)
-find_all_results(solver, inp_str)
-"""
 AA, BB, CC, DD = BitVecs('AA BB CC DD', 32)
 
-solver.add(AA == A | rounds_tmp[64])
-solver.add(BB == B | rounds_tmp[67])
-solver.add(CC == C | rounds_tmp[66])
-solver.add(DD == D | rounds_tmp[65])
+solver.add(AA == A + rounds_tmp[64])
+solver.add(BB == B + rounds_tmp[67])
+solver.add(CC == C + rounds_tmp[66])
+solver.add(DD == D + rounds_tmp[65])
 
-set_right_order_and_check_hash(AA, BB, CC, DD)
+abcd_not_glue = set_right_order(AA, BB, CC, DD)
 
-#find_all_results(solver,inp_str)
-"""
+hash_string = BitVec('hash_string', 128)
+solver.add(hash_string == Concat(*abcd_not_glue))
+solver.add(hash_string == hash_value)
+
+find_all_results(solver, inp_str)
+
